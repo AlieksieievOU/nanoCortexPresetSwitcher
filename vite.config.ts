@@ -8,14 +8,5 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-  ],
-  optimizeDeps: {
-    esbuildOptions: {
-      target: 'esnext',
-    },
-  },
-  build: {
-    minify: 'esbuild', 
-    cssMinify: true,
-  },
+  ]
 })
