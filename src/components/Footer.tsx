@@ -8,7 +8,7 @@ export const Footer: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-4">
               <SocialLink href="https://www.instagram.com/sasha.alieksieiev/" label="Instagram" />
               <SocialLink href="https://projectlira.bandcamp.com/" label="Bandcamp" />
-                <SocialLink href="https://open.spotify.com/artist/4RDL510srayFbdb2QUcwDg?si=N_LHLfdkQbK8VdlfdSwAwA" label="Spotify" />
+              <SocialLink href="https://open.spotify.com/artist/4RDL510srayFbdb2QUcwDg?si=N_LHLfdkQbK8VdlfdSwAwA" label="Spotify" />
               <SocialLink href="https://www.linkedin.com/in/oleksandralieksieiev/" label="LinkedIn" />
           </div>
       </div>
