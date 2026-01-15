@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@theme {
+  /* Neural Color System */
+  --color-neural-n0: rgba(0,0,0,1);
+  --color-neural-n10: rgb(10,10,10);
+  --color-neural-n20: rgba(18,18,18,1);
+  --color-neural-n25: rgb(22,22,22);
+  --color-neural-n27: rgb(69,69,69);
+  --color-neural-n30: rgba(30,30,30,1);
+  --color-neural-n34: rgb(37,37,37);
+  --color-neural-n40: rgba(46,46,46,1);
+  --color-neural-n45: rgba(55,55,55,1);
+  --color-neural-n50: rgb(64,64,64);
+  --color-neural-n60: rgb(82,82,82);
+  --color-neural-n70: rgba(97,97,97,1);
+  --color-neural-n76: rgba(221,221,221,1);
+  --color-neural-n80: rgb(149,149,149);
+  --color-neural-n86: rgb(221,221,221);
+  --color-neural-n90: rgba(171,171,171,1);
+  --color-neural-n94: rgb(205,205,205);
+  --color-neural-n96: rgb(244,244,244);
+  --color-neural-n100: rgba(255,255,255,1);
+
+  /* Component Colors */
+  --color-devices-comp-success: rgba(69,248,98,1);
+  --color-cta-blue: rgb(26,58,248);
+  --color-error: rgba(240,10,5);
+  --color-device-comp-modulation: #3500f1;
+
+  /* Fonts */
+  --font-primary: "IBM Plex Sans", sans-serif;
+
+  /* Shadows */
+  --shadow-md: 0px 0px 20px rgba(0,0,0,0.1);
+  --shadow-lg: 0px 0px 35px rgba(0,0,0,0.3);
+  --shadow-card: 0px 18px 28px rgba(0,0,0,0.15), 0px 0px 1px rgba(0,0,0,0.31);
+  --shadow-elevation-100: 0px 0px 1px 0px rgba(0,0,0,0.31), 0px 18px 28px 0px rgba(0,0,0,0.15);
+  --shadow-elevation-200: 0px 0px 1px 0px rgba(0,0,0,0.31), 0px 3px 5px 0px rgba(0,0,0,0.2);
+  --shadow-elevation-300: 0px 0px 1px 0px rgba(9,30,66,0.31), 0px 8px 12px 0px rgba(9,30,66,0.15);
+  --shadow-elevation-400: 0px 0px 1px 0px rgba(9,30,66,0.31), 0px 10px 18px 0px rgba(9,30,66,0.15);
+  --shadow-elevation-500: 0px 0px 1px 0px rgba(0,0,0,0.31), 0px 18px 28px 0px rgba(0,0,0,0.15);
+  --shadow-elevation-900: 0px 20px 20px 0px rgba(0,0,0,0.5);
+
+  /* Animations */
+  --animate-pulse-slow: pulse 2s infinite;
+}
+
+:root {
+  /* Form Button Variables */
+  --form-button-color: rgb(18,18,18);
+  --form-button-bg-color: rgb(255,255,255,0);
+  --form-button-border-color: rgb(255,255,255,0);
+  --form-button-radius: 999px;
+  --form-button-padding: 8px 15px;
+  --form-button-font-size: 13px;
+  --form-button-font-weight: 500;
+  
+  /* Transitions */
+  --t-speed-fastest: 50ms;
+  --t-speed-faster: 100ms;
+  --t-speed-fast: 150ms;
+  --t-speed-mediumFast: 200ms;
+  --t-speed-medium: 250ms;
+  --t-speed-slow: 300ms;
+  --t-speed-slowest: 500ms;
+  --t-speed-turtle: 1000ms;
+  
+  /* Layout */
+  --header-height-desktop: 87px;
+  --header-height-mobile: 60px;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--color-neural-n0);
+    color: var(--color-neural-n100);
+    font-family: var(--font-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Button Component Classes */
+@layer components {
+    .btn-connect {
+        @apply relative inline-flex justify-center items-center bg-[#f4f4f4] text-[#121212] border border-[#f4f4f4] rounded-full px-6 py-3 text-base font-medium transition-all duration-100 ease-out whitespace-nowrap overflow-hidden;
+    }
+
+    .btn-connect:hover:not(:disabled) {
+        @apply bg-[#e0e0e0] border-[#e0e0e0] shadow-elevation-200;
+    }
+
+    .btn-connect:active:not(:disabled) {
+        @apply shadow-elevation-100;
+    }
+
+    .btn-connect:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+
+    .btn-quick {
+        @apply relative inline-flex justify-center items-center bg-black text-white border border-neural-n40 rounded-full px-6 py-3 text-base font-medium transition-all duration-100 ease-out whitespace-nowrap overflow-hidden;
+    }
+
+    .btn-quick:hover:not(:disabled) {
+        @apply bg-[#222] shadow-elevation-200;
+    }
+
+    .btn-quick:active:not(:disabled) {
+        @apply bg-[#111];
+    }
+
+    .btn-quick:disabled {
+        @apply opacity-30 cursor-not-allowed border-[#666] text-[#666];
+    }
+
+    .btn-quick.active-state {
+        @apply !bg-white !text-black !border-neural-n40 !shadow-[0_0_10px_rgba(255,255,255,0.3)];
+    }
+
+    .btn-preset {
+        @apply flex items-center justify-center min-h-[50px] px-6 py-2.5 text-base text-neural-n100 bg-neural-n20 border border-neural-n40 rounded-lg font-medium relative overflow-hidden transition-all duration-100 ease-out;
+    }
+
+    .btn-preset:hover:not(:disabled) {
+        @apply bg-neural-n30 border-neural-n50 shadow-elevation-300;
+    }
+
+    .btn-preset:active:not(:disabled) {
+        @apply shadow-elevation-200;
+    }
+
+    .btn-preset:disabled {
+        @apply opacity-25 cursor-not-allowed;
+    }
+
+    .btn-preset.active {
+        @apply bg-neural-n100 text-neural-n20 border-neural-n100 shadow-elevation-400 font-bold;
+    }
+
+    .btn-preset.active::after {
+        content: '●';
+        @apply absolute top-2 right-3 text-xs text-devices-comp-success;
+    }
+    
+    .section-card {
+        @apply bg-neural-n20 border border-neural-n40 rounded-lg shadow-elevation-100 p-6 mb-8;
+    }
+
+    .info-box {
+        @apply border border-neural-n40 bg-neural-n20 p-6 rounded-lg mt-8;
+    }
+}
+
+/* Custom Range Slider */
+input[type=range] {
+    @apply appearance-none w-full bg-transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    @apply appearance-none h-6 w-6 rounded-full bg-white border-2 border-[#303030] cursor-pointer shadow-md -mt-2;
+}
+
+input[type=range]::-moz-range-thumb {
+    @apply h-6 w-6 rounded-full bg-white border-2 border-[#303030] cursor-pointer shadow-md;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    @apply w-full h-2 cursor-pointer bg-[#303030] rounded;
+}
+
+input[type=range]::-moz-range-track {
+    @apply w-full h-2 cursor-pointer bg-[#303030] rounded;
+}
+
+input[type=range]:disabled::-webkit-slider-thumb {
+    @apply bg-[#666] cursor-not-allowed;
+}
+
+/* Status Dot */
+.status-dot {
+    @apply w-3 h-3 rounded-full bg-[#666] inline-block transition-all duration-300;
+}
+
+.status-dot.connected {
+    @apply bg-devices-comp-success shadow-[0_0_12px_rgba(69,248,98,0.6)] animate-pulse-slow;
+}

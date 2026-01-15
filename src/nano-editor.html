@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano Cortex - Neural DSP</title>
+    <meta name="description" content="Your tone. Your rig. Play anywhere.">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind.config.js"></script>
+    
+    <!-- Google Fonts - IBM Plex Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="text-white bg-black">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-neural-gray">
+        <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20 gap-6">
+                
+                <!-- Status and Connect Button (Moved to Left) -->
+                <div class="flex items-center gap-4 md:gap-6">
+                    <!-- Status Indicator -->
+                    <div class="items-center hidden gap-3 sm:flex">
+                        <span class="status-dot" id="navStatusDot"></span>
+                        <span class="text-sm font-medium" id="navStatusText">Not connected</span>
+                    </div>
+                    
+                    <!-- Connect Button -->
+                    <button id="navConnectBtn" class="text-sm btn-connect md:text-base">
+                        Connect
+                    </button>
+
+                    
+                </div>
+
+                <!-- Logo (Moved to Right) -->
+                <div class="flex-shrink-0">
+                  <span class="hidden px-6 sm:inline">I'm unemployed, please buy my song on</span>  <a target="_blank" href="https://projectlira.bandcamp.com/track/i-dwell" class="text-sm btn-connect md:text-base"> Bandcamp</a>  
+                </div>
+                
+            </div>
+        </div>
+        
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="min-h-screen pt-24 pb-16">
+        <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            
+            <!-- Header Section -->
+            <div class="mb-12 text-center">
+                <h1 class="mb-4 text-4xl font-bold sm:text-5xl md:text-6xl">
+                   Unofficial Nano Cortex 
+                </h1>
+                 <h2 class="mb-6 text-2xl font-bold">
+                     Web Preset Switcher
+                </h2>
+               
+            </div>
+        
+            
+
+            <!-- Effect & Utility Controls -->
+            <div class="p-6 mb-8 rounded-lg section-card">
+                <h2 class="flex items-center gap-3 mb-6 text-2xl font-bold">
+                    Effect & Utility Controls
+                </h2>
+                
+                <!-- Utilities -->
+                <div class="mb-8">
+                     <h3 class="mb-3 text-lg font-semibold text-neural-n90">Utility</h3>
+                     <div class="flex flex-wrap gap-3">
+                        <button class="btn-quick" id="btnTapTempo" disabled>Tap Tempo</button>
+                        <button class="btn-quick" id="btnTuner" disabled>Tuner</button>
+                     </div>
+                </div>
+
+                <!-- Bypass Slots -->
+                <div class="mb-8">
+                    <h3 class="mb-3 text-lg font-semibold text-neural-n90">Bypass Slots</h3>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <button class="btn-quick" id="btnGate" disabled>Input Gate</button>
+                        <button class="btn-quick" id="btnCapture" disabled>Capture</button>
+                        <button class="btn-quick" id="btnCab" disabled>Cab/IR</button>
+                        <button class="btn-quick" id="btnFx1" disabled>FX Slot 1</button>
+                        <button class="btn-quick" id="btnFx2" disabled>FX Slot 2</button>
+                        <button class="btn-quick" id="btnFx3" disabled>FX Slot 3</button>
+                        <button class="btn-quick" id="btnFx4" disabled>FX Slot 4</button>
+                        <button class="btn-quick" id="btnFx5" disabled>FX Slot 5</button>
+                    </div>
+                </div>
+
+                <!-- Expression -->
+                <div>
+                    <h3 class="mb-3 text-lg font-semibold text-neural-n90">Expression Pedal</h3>
+                    <div class="relative pt-1">
+                        <input type="range" min="0" max="127" value="0" class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-neural-n40" id="expressionPedal" disabled>
+                        <div class="flex justify-between mt-2 text-xs text-neural-n80">
+                            <span>Heel (0)</span>
+                            <span>Toe (127)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Presets Grid -->
+            <div class="p-6 mb-8 rounded-lg section-card">
+                <h2 class="flex items-center gap-3 mb-6 text-2xl font-bold">
+                    All Presets (1-64)
+                </h2>
+                  <div class="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-3 lg:grid-cols-5 ">
+                    <button class="btn-quick" id="prevBtn" disabled>
+                        <span class="inline-block mr-2">←</span> Previous
+                    </button>
+                    <button class="btn-quick" id="nextBtn" disabled>
+                        Next <span class="inline-block ml-2">→</span>
+                    </button>
+                </div>
+                <div class="presets-grid" id="presetsGrid">
+                    <!-- Presets will be generated here -->
+                </div>
+            </div>
+            
+            <!-- Setup Instructions -->
+            <div class="info-box">
+                <h3>Setup Instructions</h3>
+                <ul class="mb-6">
+                    <li>Connect your Nano Cortex to your computer via USB-C</li>
+                    <li>Click "Connect to Nano Cortex" and select your device</li>
+                    <li>Click any preset button to switch (presets 1-64)</li>
+                    <li>Use keyboard numbers 1-9 for quick preset access</li>
+                    <li>Use arrow keys ← → to navigate presets</li>
+                    <li>Works in Chrome, Edge, and Opera (WebMIDI API required)</li>
+                    <li>If something is not working...oh well, I did my best</li>
+                </ul>
+                <a  class="inline-block mt-6 btn-connect" href="https://neuraldsp.com/manual/nano-cortex#Incoming-MIDI-CC-List" target="_blank">Official Neural Dsp Nano Cortex Midi manual</a> 
+            </div>
+            
+            <!-- Follow Me -->
+            <div class="text-center info-box">
+                <h3 class="mb-6">Follow me</h3>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="https://www.instagram.com/sasha.alieksieiev/" target="_blank" class="inline-block px-8 py-4 text-lg btn-connect">Instagram</a>
+                    <a href="https://projectlira.bandcamp.com/" target="_blank" class="inline-block px-8 py-4 text-lg btn-connect">Bandcamp</a>
+                    <a href="https://www.linkedin.com/in/oleksandralieksieiev/" target="_blank" class="inline-block px-8 py-4 text-lg btn-connect">LinkedIn</a>
+                    <a href="https://github.com/AlieksieievOU" target="_blank" class="inline-block px-8 py-4 text-lg btn-connect">GitHub</a>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="border-t py-12 bg-[var(--neural-n20)] border-[var(--neural-n40)]">
+        <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p class="text-sm text-[var(--neural-n80)]">
+                    Neural DSP®, Neural Capture®, Nano Cortex®, and Quad Cortex® are registered trademarks of Neural DSP Technologies Oy.
+                </p>
+                <p class="text-sm mt-4 text-[var(--neural-n70)]">
+                    Unofficial MIDI controller. Not affiliated with Neural DSP Technologies.
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        let midiOutput = null;
+        let midiInput = null;
+        let currentPreset = 0;
+
+        // MIDI CC Constants
+        const CC = {
+            EXPRESSION: 1,
+            GATE: 34,
+            CAPTURE: 35,
+            CAB: 36,
+            FX1: 37,
+            FX2: 38,
+            FX3: 39,
+            FX4: 40,
+            FX5: 41,
+            TAP: 42,
+            TUNER: 43
+        };
+
+        // State tracking for toggles
+        const ccState = {
+            [CC.GATE]: false,
+            [CC.CAPTURE]: false,
+            [CC.CAB]: false,
+            [CC.FX1]: false,
+            [CC.FX2]: false,
+            [CC.FX3]: false,
+            [CC.FX4]: false,
+            [CC.FX5]: false,
+            [CC.TUNER]: false
+        };
+
+
+
+        // Initialize preset grid
+        function initPresetGrid() {
+            const grid = document.getElementById('presetsGrid');
+            if (!grid) return;
+            
+            for (let i = 0; i < 64; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-preset';
+                btn.textContent = `${i + 1}`;
+                btn.disabled = true;
+                btn.dataset.preset = i;
+                btn.addEventListener('click', () => switchPreset(i));
+                grid.appendChild(btn);
+            }
+        }
+
+        // Connect to MIDI device
+        async function connectMIDI() {
+            const connectBtn = document.getElementById('connectBtn');
+            const navConnectBtn = document.getElementById('navConnectBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (errorMessage) errorMessage.classList.remove('show');
+
+            // Check if page is served securely
+            if (window.location.protocol === 'file:') {
+                showError('⚠️ Cannot use file:// protocol. Please host this page on a web server (see hosting options below) or use: python3 -m http.server 8000');
+                return;
+            }
+
+            if (!navigator.requestMIDIAccess) {
+                showError('WebMIDI is not supported in your browser. Please use Chrome, Edge, or Opera.');
+                return;
+            }
+
+            try {
+                if (connectBtn) {
+                    connectBtn.disabled = true;
+                    connectBtn.textContent = 'Connecting...';
+                }
+                if (navConnectBtn) {
+                    navConnectBtn.disabled = true;
+                    navConnectBtn.textContent = 'Connecting...';
+                }
+
+                const midiAccess = await navigator.requestMIDIAccess();
+                
+                // Get all MIDI outputs and inputs
+                const outputs = Array.from(midiAccess.outputs.values());
+                const inputs = Array.from(midiAccess.inputs.values());
+                
+                if (outputs.length === 0) {
+                    showError('No MIDI devices found. Please connect your Nano Cortex via USB.');
+                    if (connectBtn) {
+                        connectBtn.disabled = false;
+                        connectBtn.textContent = 'Connect to Nano Cortex';
+                    }
+                    if (navConnectBtn) {
+                        navConnectBtn.disabled = false;
+                        navConnectBtn.textContent = 'Connect';
+                    }
+                    return;
+                }
+
+                // Look for Nano Cortex Output
+                let selectedOutput = outputs.find(output => 
+                    output.name.toLowerCase().includes('nano') || 
+                    output.name.toLowerCase().includes('cortex')
+                );
+
+                if (!selectedOutput && outputs.length === 1) {
+                    selectedOutput = outputs[0];
+                } else if (!selectedOutput) {
+                    selectedOutput = outputs[0];
+                }
+
+                // Look for Nano Cortex Input
+                let selectedInput = inputs.find(input => 
+                    input.name.toLowerCase().includes('nano') || 
+                    input.name.toLowerCase().includes('cortex')
+                );
+
+                if (!selectedInput && inputs.length === 1) {
+                    selectedInput = inputs[0];
+                }
+
+                midiOutput = selectedOutput;
+                
+                if (selectedInput) {
+                    midiInput = selectedInput;
+                    midiInput.onmidimessage = handleMidiMessage;
+                    console.log(`Connected to MIDI Input: ${selectedInput.name}`);
+                }
+
+                updateConnectionStatus(true, selectedOutput.name);
+                enableControls();
+                
+                // Initialize device state sync
+                // Note: The device will send CC/PC messages when you interact with it
+                // This will automatically update the UI to reflect the current state
+                console.log('🎹 MIDI Connection established. UI will sync when you interact with the device.');
+
+            } catch (error) {
+                if (error.message.includes('permissions policy')) {
+                    showError('⚠️ MIDI blocked by permissions policy. Please host this page (see hosting options below) or use a local server.');
+                } else {
+                    showError(`Connection failed: ${error.message}`);
+                }
+                if (connectBtn) {
+                    connectBtn.disabled = false;
+                    connectBtn.textContent = 'Connect to Nano Cortex';
+                }
+                if (navConnectBtn) {
+                    navConnectBtn.disabled = false;
+                    navConnectBtn.textContent = 'Connect';
+                }
+            }
+        }
+
+        // Handle Incoming MIDI Messages
+        function handleMidiMessage(event) {
+            const [status, data1, data2] = event.data;
+            const channel = status & 0x0F;
+            const messageType = status & 0xF0;
+            
+            // Check for Control Change (0xB0)
+            if (messageType === 0xB0) {
+                const ccNumber = data1;
+                const value = data2;
+                
+                console.log(`📥 Received CC${ccNumber} = ${value} (${value >= 64 ? 'ON' : 'OFF'})`);
+                
+                // Update local state if it tracks this CC
+                if (ccState.hasOwnProperty(ccNumber)) {
+                    const isOn = value >= 64; // Standard MIDI logic: 0-63 off, 64-127 on
+                    ccState[ccNumber] = isOn;
+                    updateButtonState(ccNumber, isOn);
+                }
+                
+                // Handle Expression Pedal feedback if needed
+                if (ccNumber === CC.EXPRESSION) {
+                    const expPedal = document.getElementById('expressionPedal');
+                    if (expPedal && document.activeElement !== expPedal) {
+                        expPedal.value = value;
+                    }
+                }
+            }
+            // Check for Program Change (0xC0)
+            else if (messageType === 0xC0) {
+                const presetNumber = data1;
+                console.log(`📥 Received Preset Change: ${presetNumber + 1}`);
+                if (presetNumber >= 0 && presetNumber < 64) {
+                    currentPreset = presetNumber;
+                    updateActivePreset(presetNumber);
+                }
+            }
+        }
+
+        // Update Button UI based on state
+        function updateButtonState(ccNumber, isOn) {
+            const ccToBtnMap = {
+                [CC.GATE]: 'btnGate',
+                [CC.CAPTURE]: 'btnCapture',
+                [CC.CAB]: 'btnCab',
+                [CC.FX1]: 'btnFx1',
+                [CC.FX2]: 'btnFx2',
+                [CC.FX3]: 'btnFx3',
+                [CC.FX4]: 'btnFx4',
+                [CC.FX5]: 'btnFx5',
+                [CC.TUNER]: 'btnTuner',
+                [CC.TAP]: 'btnTapTempo'
+            };
+
+            const btnId = ccToBtnMap[ccNumber];
+            if (btnId) {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    if (isOn) {
+                        btn.classList.add('active-state');
+                    } else {
+                        btn.classList.remove('active-state');
+                    }
+                }
+            }
+        }
+
+        // Send MIDI Control Change Message
+        function sendCC(ccNumber, value) {
+            if (!midiOutput) {
+                showError('Not connected to device');
+                return;
+            }
+            try {
+                // Send MIDI Control Change (0xB0 = Control Change on channel 1)
+                midiOutput.send([0xB0, ccNumber, value]);
+                console.log(`📤 Sent CC${ccNumber} = ${value} (${value >= 64 ? 'ON' : 'OFF'})`);
+            } catch (error) {
+                console.error(`Failed to send CC message: ${error.message}`);
+            }
+        }
+
+        // Toggle Logic for Buttons
+        function toggleCC(ccNumber, btnId) {
+            const newState = !ccState[ccNumber];
+            ccState[ccNumber] = newState;
+            
+            // Value 0-63 = Off, 64-127 = On. Sending 0 and 127 for clear states.
+            const value = newState ? 127 : 0;
+            sendCC(ccNumber, value);
+
+            // Update UI
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                if (newState) {
+                    btn.classList.add('active-state');
+                } else {
+                    btn.classList.remove('active-state');
+                }
+            }
+        }
+
+        // Switch preset
+        function switchPreset(presetNumber) {
+            if (!midiOutput) {
+                showError('Not connected to device');
+                return;
+            }
+
+            try {
+                // Send MIDI Program Change (0xC0 = program change on channel 1)
+                midiOutput.send([0xC0, presetNumber]);
+                console.log(`📤 Sent Preset Change: ${presetNumber + 1}`);
+                
+                // Update UI
+                updateActivePreset(presetNumber);
+                currentPreset = presetNumber;
+            } catch (error) {
+                showError(`Failed to send MIDI message: ${error.message}`);
+            }
+        }
+
+        // Update active preset display
+        function updateActivePreset(presetNumber) {
+            const buttons = document.querySelectorAll('.btn-preset');
+            buttons.forEach((btn, index) => {
+                btn.classList.toggle('active', index === presetNumber);
+            });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected, deviceName = '') {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const navStatusDot = document.getElementById('navStatusDot');
+            const navStatusText = document.getElementById('navStatusText');
+            const connectBtn = document.getElementById('connectBtn');
+            const navConnectBtn = document.getElementById('navConnectBtn');
+
+            if (connected) {
+                if(statusDot) statusDot.classList.add('connected');
+                if(navStatusDot) navStatusDot.classList.add('connected');
+                if(statusText) statusText.textContent = `Connected to ${deviceName}`;
+                if(navStatusText) navStatusText.textContent = `Connected`;
+                if(connectBtn) {
+                    connectBtn.textContent = 'Connected ✓';
+                    connectBtn.disabled = true;
+                }
+                if(navConnectBtn) {
+                    navConnectBtn.textContent = 'Connected ✓';
+                    navConnectBtn.disabled = true;
+                }
+            } else {
+                if(statusDot) statusDot.classList.remove('connected');
+                if(navStatusDot) navStatusDot.classList.remove('connected');
+                if(statusText) statusText.textContent = 'Not connected';
+                if(navStatusText) navStatusText.textContent = 'Not connected';
+                if(connectBtn) {
+                    connectBtn.textContent = 'Connect to Nano Cortex';
+                    connectBtn.disabled = false;
+                }
+                if(navConnectBtn) {
+                    navConnectBtn.textContent = 'Connect';
+                    navConnectBtn.disabled = false;
+                }
+            }
+        }
+
+        // Enable controls
+        function enableControls() {
+            // Enable all buttons and inputs
+            const selectors = [
+                '.btn-preset', 
+                '.btn-quick', 
+                '#expressionPedal'
+            ];
+            
+            selectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(el => {
+                    el.disabled = false;
+                });
+            });
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            if(errorMessage) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+                setTimeout(() => {
+                    errorMessage.classList.remove('show');
+                }, 6000);
+            } else {
+                console.error(message);
+            }
+        }
+
+        // Setup Event Listeners for new controls
+        function setupCCListeners() {
+            // Utilities
+            const btnTap = document.getElementById('btnTapTempo');
+            if (btnTap) {
+                btnTap.addEventListener('mousedown', () => {
+                    sendCC(CC.TAP, 127);
+                    btnTap.classList.add('active-state');
+                });
+                btnTap.addEventListener('mouseup', () => {
+                    // Tap tempo is usually a trigger, but we remove visual state
+                    btnTap.classList.remove('active-state');
+                });
+            }
+
+            const btnTuner = document.getElementById('btnTuner');
+            if (btnTuner) {
+                btnTuner.addEventListener('click', () => toggleCC(CC.TUNER, 'btnTuner'));
+            }
+
+            // Bypass Toggles
+            const bypassMap = [
+                { id: 'btnGate', cc: CC.GATE },
+                { id: 'btnCapture', cc: CC.CAPTURE },
+                { id: 'btnCab', cc: CC.CAB },
+                { id: 'btnFx1', cc: CC.FX1 },
+                { id: 'btnFx2', cc: CC.FX2 },
+                { id: 'btnFx3', cc: CC.FX3 },
+                { id: 'btnFx4', cc: CC.FX4 },
+                { id: 'btnFx5', cc: CC.FX5 }
+            ];
+
+            bypassMap.forEach(item => {
+                const btn = document.getElementById(item.id);
+                if (btn) {
+                    btn.addEventListener('click', () => toggleCC(item.cc, item.id));
+                }
+            });
+
+            // Expression Pedal
+            const expPedal = document.getElementById('expressionPedal');
+            if (expPedal) {
+                expPedal.addEventListener('input', (e) => {
+                    sendCC(CC.EXPRESSION, parseInt(e.target.value));
+                });
+            }
+        }
+
+        // Quick access buttons (Legacy Presets)
+        const prevBtn = document.getElementById('prevBtn');
+        if(prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                const newPreset = Math.max(0, currentPreset - 1);
+                switchPreset(newPreset);
+            });
+        }
+
+        const nextBtn = document.getElementById('nextBtn');
+        if(nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const newPreset = Math.min(63, currentPreset + 1);
+                switchPreset(newPreset);
+            });
+        }
+
+        const p1Btn = document.getElementById('preset1Btn');
+        if(p1Btn) p1Btn.addEventListener('click', () => switchPreset(0));
+        
+        const p8Btn = document.getElementById('preset8Btn');
+        if(p8Btn) p8Btn.addEventListener('click', () => switchPreset(7));
+        
+        const p16Btn = document.getElementById('preset16Btn');
+        if(p16Btn) p16Btn.addEventListener('click', () => switchPreset(15));
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (!midiOutput) return;
+            
+            const key = parseInt(e.key);
+            if (key >= 1 && key <= 9) {
+                switchPreset(key - 1);
+            } else if (e.key === 'ArrowLeft') {
+                const pb = document.getElementById('prevBtn');
+                if(pb) pb.click();
+            } else if (e.key === 'ArrowRight') {
+                const nb = document.getElementById('nextBtn');
+                if(nb) nb.click();
+            }
+        });
+
+        // Initialize
+        const mainConnectBtn = document.getElementById('connectBtn');
+        if(mainConnectBtn) mainConnectBtn.addEventListener('click', connectMIDI);
+        
+        const navConnectBtn = document.getElementById('navConnectBtn');
+        if(navConnectBtn) navConnectBtn.addEventListener('click', connectMIDI);
+        
+        initPresetGrid();
+        setupCCListeners(); // Initialize listeners for new controls
+        
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('nav');
+            if (nav) {
+                if (window.scrollY > 20) {
+                    nav.style.background = 'rgba(0, 0, 0, 0.98)';
+                } else {
+                    nav.style.background = 'rgba(0, 0, 0, 0.95)';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
