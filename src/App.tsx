@@ -36,6 +36,7 @@ function App(){
 
   // MIDI Message Handler
   const handleMidiMessage = useCallback((event: MIDIMessageEvent) => {
+    if (!event.data) return;
     const [status, data1, data2] = event.data;
     const messageType = status & 0xF0;
 
