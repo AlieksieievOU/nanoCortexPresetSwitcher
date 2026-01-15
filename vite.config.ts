@@ -19,7 +19,7 @@ export default defineConfig({
     },
   },
   build: {
-    minify: 'esbuild', // or 'terser' for more aggressive minification
+    minify: 'esbuild', 
     cssMinify: true,
   },
 })
