@@ -11,4 +11,47 @@ export type MIDIPort = globalThis.MIDIPort;
 // Extend Navigator. We use the global MIDIAccess type to match the native signature.
 export interface NavigatorWithMIDI extends Navigator {
   requestMIDIAccess(options?: any): Promise<MIDIAccess>;
+  bluetooth?: Bluetooth;
+}
+
+export interface Bluetooth {
+  requestDevice(options: RequestDeviceOptions): Promise<BluetoothDevice>;
+}
+
+export interface RequestDeviceOptions {
+  filters?: BluetoothLEScanFilter[];
+  optionalServices?: BluetoothServiceUUID[];
+  acceptAllDevices?: boolean;
+}
+
+export interface BluetoothLEScanFilter {
+  name?: string;
+  namePrefix?: string;
+  services?: BluetoothServiceUUID[];
+}
+
+export type BluetoothServiceUUID = number | string;
+
+export interface BluetoothDevice {
+  id: string;
+  name?: string;
+  gatt?: BluetoothRemoteGATTServer;
+}
+
+export interface BluetoothRemoteGATTServer {
+  connected: boolean;
+  connect(): Promise<BluetoothRemoteGATTServer>;
+  disconnect(): void;
+  getPrimaryService(service: BluetoothServiceUUID): Promise<BluetoothRemoteGATTService>;
+}
+
+export interface BluetoothRemoteGATTService {
+  getCharacteristic(characteristic: BluetoothServiceUUID): Promise<BluetoothRemoteGATTCharacteristic>;
+}
+
+export interface BluetoothRemoteGATTCharacteristic {
+  writeValue(value: BufferSource): Promise<void>;
+  startNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
+  addEventListener(type: string, listener: EventListener): void;
+  value?: DataView;
 }

@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body class="text-white bg-black">
     
@@ -33,16 +33,19 @@
                         <span class="text-sm font-medium" id="navStatusText">Not connected</span>
                     </div>
                     
-                    <!-- Connect Button -->
-                    <button id="navConnectBtn" class="text-sm btn-connect md:text-base">
-                        Connect
-                    </button>
-
-                    
+                    <!-- Connect Buttons -->
+                    <div class="flex gap-2">
+                        <button id="navConnectBtn" class="text-sm btn-connect md:text-base" title="Connect via USB">
+                            USB
+                        </button>
+                        <button id="navConnectBleBtn" class="text-sm btn-connect md:text-base" title="Connect via Bluetooth">
+                            BLE
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Logo (Moved to Right) -->
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                   <span class="hidden px-6 sm:inline">I'm unemployed, please buy my song on</span>  <a target="_blank" href="https://projectlira.bandcamp.com/track/i-dwell" class="text-sm btn-connect md:text-base"> Bandcamp</a>  
                 </div>
                 
@@ -143,6 +146,20 @@
                 </ul>
                 <a  class="inline-block mt-6 btn-connect" href="https://neuraldsp.com/manual/nano-cortex#Incoming-MIDI-CC-List" target="_blank">Official Neural Dsp Nano Cortex Midi manual</a> 
             </div>
+
+            <!-- BLE Protocol Tester -->
+            <div class="p-6 mb-8 rounded-lg section-card border border-yellow-600">
+                <h2 class="mb-4 text-xl font-bold text-yellow-500">BLE Protocol Tester</h2>
+                <p class="mb-4 text-sm text-gray-400">Try these formats to toggle TUNER (CC 43). Check which one works.</p>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <button class="btn-quick" onclick="sendTestFormat(1)">1. Standard MIDI [B0, 2B, 7F]</button>
+                    <button class="btn-quick" onclick="sendTestFormat(2)">2. BLE Packet [80, 80, B0...]</button>
+                    <button class="btn-quick" onclick="sendTestFormat(3)">3. CC + Val [2B, 7F]</button>
+                    <button class="btn-quick" onclick="sendTestFormat(4)">4. Prefix [00, B0...]</button>
+                    <button class="btn-quick" onclick="sendTestFormat(5)">5. Run Status [2B, 7F]</button>
+                    <button class="btn-quick" onclick="sendTestFormat(6)">6. SysEx Wrap [F0...F7]</button>
+                </div>
+            </div>
             
             <!-- Follow Me -->
             <div class="text-center info-box">
@@ -159,13 +176,13 @@
     </main>
     
     <!-- Footer -->
-    <footer class="border-t py-12 bg-[var(--neural-n20)] border-[var(--neural-n40)]">
+    <footer class="border-t py-12 bg-(--neural-n20) border-(--neural-n40)">
         <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="text-center">
-                <p class="text-sm text-[var(--neural-n80)]">
+                <p class="text-sm text-(--neural-n80)">
                     Neural DSP®, Neural Capture®, Nano Cortex®, and Quad Cortex® are registered trademarks of Neural DSP Technologies Oy.
                 </p>
-                <p class="text-sm mt-4 text-[var(--neural-n70)]">
+                <p class="text-sm mt-4 text-(--neural-n70)">
                     Unofficial MIDI controller. Not affiliated with Neural DSP Technologies.
                 </p>
             </div>
@@ -175,6 +192,13 @@
     <script>
         let midiOutput = null;
         let midiInput = null;
+        
+        // BLE State
+        let bluetoothDevice = null;
+        let bluetoothCharacteristic = null;
+        const NANOCORTEXBLESERVICE = '0000a002-0000-1000-8000-00805f9b34fb';
+        const NANOCORTEXBLECHAR = '0000c302-0000-1000-8000-00805f9b34fb';
+
         let currentPreset = 0;
 
         // MIDI CC Constants
@@ -223,130 +247,143 @@
             }
         }
 
-        // Connect to MIDI device
+        // --- USB MIDI Connection ---
         async function connectMIDI() {
-            const connectBtn = document.getElementById('connectBtn');
-            const navConnectBtn = document.getElementById('navConnectBtn');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            if (errorMessage) errorMessage.classList.remove('show');
+            resetConnections();
+            const btn = document.getElementById('navConnectBtn');
+            const mainBtn = document.getElementById('connectBtn');
+            setConnecting(btn, mainBtn, true, 'USB');
 
-            // Check if page is served securely
             if (window.location.protocol === 'file:') {
-                showError('⚠️ Cannot use file:// protocol. Please host this page on a web server (see hosting options below) or use: python3 -m http.server 8000');
+                showError('⚠️ Cannot use file:// protocol. Please host this page on a web server.');
+                setConnecting(btn, mainBtn, false, 'USB');
                 return;
             }
 
             if (!navigator.requestMIDIAccess) {
-                showError('WebMIDI is not supported in your browser. Please use Chrome, Edge, or Opera.');
+                showError('WebMIDI is not supported in your browser.');
+                setConnecting(btn, mainBtn, false, 'USB');
                 return;
             }
 
             try {
-                if (connectBtn) {
-                    connectBtn.disabled = true;
-                    connectBtn.textContent = 'Connecting...';
-                }
-                if (navConnectBtn) {
-                    navConnectBtn.disabled = true;
-                    navConnectBtn.textContent = 'Connecting...';
-                }
-
                 const midiAccess = await navigator.requestMIDIAccess();
-                
-                // Get all MIDI outputs and inputs
                 const outputs = Array.from(midiAccess.outputs.values());
                 const inputs = Array.from(midiAccess.inputs.values());
                 
                 if (outputs.length === 0) {
-                    showError('No MIDI devices found. Please connect your Nano Cortex via USB.');
-                    if (connectBtn) {
-                        connectBtn.disabled = false;
-                        connectBtn.textContent = 'Connect to Nano Cortex';
-                    }
-                    if (navConnectBtn) {
-                        navConnectBtn.disabled = false;
-                        navConnectBtn.textContent = 'Connect';
-                    }
+                    showError('No MIDI devices found.');
+                    setConnecting(btn, mainBtn, false, 'USB');
                     return;
                 }
 
-                // Look for Nano Cortex Output
-                let selectedOutput = outputs.find(output => 
-                    output.name.toLowerCase().includes('nano') || 
-                    output.name.toLowerCase().includes('cortex')
-                );
-
-                if (!selectedOutput && outputs.length === 1) {
-                    selectedOutput = outputs[0];
-                } else if (!selectedOutput) {
-                    selectedOutput = outputs[0];
-                }
-
-                // Look for Nano Cortex Input
-                let selectedInput = inputs.find(input => 
-                    input.name.toLowerCase().includes('nano') || 
-                    input.name.toLowerCase().includes('cortex')
-                );
-
-                if (!selectedInput && inputs.length === 1) {
-                    selectedInput = inputs[0];
-                }
+                // Look for Nano Cortex
+                let selectedOutput = outputs.find(o => o.name.toLowerCase().includes('nano') || o.name.toLowerCase().includes('cortex')) || outputs[0];
+                let selectedInput = inputs.find(i => i.name.toLowerCase().includes('nano') || i.name.toLowerCase().includes('cortex')) || inputs[0];
 
                 midiOutput = selectedOutput;
                 
                 if (selectedInput) {
                     midiInput = selectedInput;
                     midiInput.onmidimessage = handleMidiMessage;
-                    console.log(`Connected to MIDI Input: ${selectedInput.name}`);
                 }
 
-                updateConnectionStatus(true, selectedOutput.name);
+                updateConnectionStatus(true, selectedOutput.name, 'USB');
                 enableControls();
-                
-                // Initialize device state sync
-                // Note: The device will send CC/PC messages when you interact with it
-                // This will automatically update the UI to reflect the current state
-                console.log('🎹 MIDI Connection established. UI will sync when you interact with the device.');
+                console.log('🎹 USB MIDI Connected.');
 
             } catch (error) {
-                if (error.message.includes('permissions policy')) {
-                    showError('⚠️ MIDI blocked by permissions policy. Please host this page (see hosting options below) or use a local server.');
-                } else {
-                    showError(`Connection failed: ${error.message}`);
-                }
-                if (connectBtn) {
-                    connectBtn.disabled = false;
-                    connectBtn.textContent = 'Connect to Nano Cortex';
-                }
-                if (navConnectBtn) {
-                    navConnectBtn.disabled = false;
-                    navConnectBtn.textContent = 'Connect';
-                }
+                showError(`USB Connection failed: ${error.message}`);
+                setConnecting(btn, mainBtn, false, 'USB');
             }
         }
 
-        // Handle Incoming MIDI Messages
+        // --- Bluetooth Connection ---
+        async function connectBluetooth() {
+            resetConnections();
+            const btn = document.getElementById('navConnectBleBtn');
+            setConnecting(btn, null, true, 'BLE');
+
+            if (!navigator.bluetooth) {
+                showError('Web Bluetooth is not supported in this browser.');
+                setConnecting(btn, null, false, 'BLE');
+                return;
+            }
+
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { services: [NANOCORTEXBLESERVICE] },
+                        { namePrefix: 'Nano' },
+                        { namePrefix: 'Cortex' }
+                    ],
+                    optionalServices: [NANOCORTEXBLESERVICE]
+                });
+
+                if (!bluetoothDevice) throw new Error('No device selected');
+
+                bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+                    updateConnectionStatus(false);
+                });
+
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService(NANOCORTEXBLESERVICE);
+                bluetoothCharacteristic = await service.getCharacteristic(NANOCORTEXBLECHAR);
+
+                updateConnectionStatus(true, bluetoothDevice.name, 'BLE');
+                enableControls();
+                console.log('📶 Bluetooth Connected.');
+
+            } catch (error) {
+                showError(`BLE Connection failed: ${error.message}`);
+                setConnecting(btn, null, false, 'BLE');
+            }
+        }
+
+        function resetConnections() {
+            if (midiOutput) midiOutput = null;
+            if (midiInput) {
+                midiInput.onmidimessage = null;
+                midiInput = null;
+            }
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                bluetoothDevice.gatt.disconnect();
+            }
+            bluetoothDevice = null;
+            bluetoothCharacteristic = null;
+            updateConnectionStatus(false);
+        }
+
+        function setConnecting(btn1, btn2, isConnecting, type) {
+            const text = isConnecting ? '...' : (type === 'BLE' ? 'BLE' : 'USB');
+            if (btn1) {
+                btn1.disabled = isConnecting;
+                btn1.textContent = text;
+            }
+            if (btn2) {
+                btn2.disabled = isConnecting;
+                btn2.textContent = isConnecting ? 'Connecting...' : 'Connect to Nano Cortex';
+            }
+        }
+
+        // Handle Incoming MIDI Messages (USB Only for now)
         function handleMidiMessage(event) {
             const [status, data1, data2] = event.data;
-            const channel = status & 0x0F;
             const messageType = status & 0xF0;
             
-            // Check for Control Change (0xB0)
+            // Control Change (0xB0)
             if (messageType === 0xB0) {
                 const ccNumber = data1;
                 const value = data2;
                 
-                console.log(`📥 Received CC${ccNumber} = ${value} (${value >= 64 ? 'ON' : 'OFF'})`);
+                console.log(`📥 Received CC${ccNumber} = ${value}`);
                 
-                // Update local state if it tracks this CC
                 if (ccState.hasOwnProperty(ccNumber)) {
-                    const isOn = value >= 64; // Standard MIDI logic: 0-63 off, 64-127 on
+                    const isOn = value >= 64; 
                     ccState[ccNumber] = isOn;
                     updateButtonState(ccNumber, isOn);
                 }
                 
-                // Handle Expression Pedal feedback if needed
                 if (ccNumber === CC.EXPRESSION) {
                     const expPedal = document.getElementById('expressionPedal');
                     if (expPedal && document.activeElement !== expPedal) {
@@ -354,7 +391,7 @@
                     }
                 }
             }
-            // Check for Program Change (0xC0)
+            // Program Change (0xC0)
             else if (messageType === 0xC0) {
                 const presetNumber = data1;
                 console.log(`📥 Received Preset Change: ${presetNumber + 1}`);
@@ -393,19 +430,35 @@
             }
         }
 
-        // Send MIDI Control Change Message
+        // Unified Send Function
+        async function sendMIDI(data) {
+            if (midiOutput) {
+                try {
+                    midiOutput.send(data);
+                    console.log(`📤 Sent USB MIDI: [${data}]`);
+                } catch (e) {
+                    console.error('USB Send Error', e);
+                }
+            } else if (bluetoothCharacteristic) {
+                try {
+                    // Single Byte Value Only logic
+                    for (const byte of data) {
+                        const buffer = new Uint8Array([byte]);
+                        await bluetoothCharacteristic.writeValueWithoutResponse(buffer);
+                    }
+                    console.log(`📤 Sent BLE MIDI (Sequential): [${data}]`);
+                } catch (e) {
+                    console.error('BLE Send Error', e);
+                    showError('BLE Write Error: ' + e.message);
+                }
+            } else {
+                showError('Not connected');
+            }
+        }
+
+        // Send CC
         function sendCC(ccNumber, value) {
-            if (!midiOutput) {
-                showError('Not connected to device');
-                return;
-            }
-            try {
-                // Send MIDI Control Change (0xB0 = Control Change on channel 1)
-                midiOutput.send([0xB0, ccNumber, value]);
-                console.log(`📤 Sent CC${ccNumber} = ${value} (${value >= 64 ? 'ON' : 'OFF'})`);
-            } catch (error) {
-                console.error(`Failed to send CC message: ${error.message}`);
-            }
+            sendMIDI([0xB0, ccNumber, value]);
         }
 
         // Toggle Logic for Buttons
@@ -413,11 +466,9 @@
             const newState = !ccState[ccNumber];
             ccState[ccNumber] = newState;
             
-            // Value 0-63 = Off, 64-127 = On. Sending 0 and 127 for clear states.
             const value = newState ? 127 : 0;
             sendCC(ccNumber, value);
 
-            // Update UI
             const btn = document.getElementById(btnId);
             if (btn) {
                 if (newState) {
@@ -430,22 +481,9 @@
 
         // Switch preset
         function switchPreset(presetNumber) {
-            if (!midiOutput) {
-                showError('Not connected to device');
-                return;
-            }
-
-            try {
-                // Send MIDI Program Change (0xC0 = program change on channel 1)
-                midiOutput.send([0xC0, presetNumber]);
-                console.log(`📤 Sent Preset Change: ${presetNumber + 1}`);
-                
-                // Update UI
-                updateActivePreset(presetNumber);
-                currentPreset = presetNumber;
-            } catch (error) {
-                showError(`Failed to send MIDI message: ${error.message}`);
-            }
+            sendMIDI([0xC0, presetNumber]);
+            updateActivePreset(presetNumber);
+            currentPreset = presetNumber;
         }
 
         // Update active preset display
@@ -457,52 +495,37 @@
         }
 
         // Update connection status
-        function updateConnectionStatus(connected, deviceName = '') {
-            const statusDot = document.getElementById('statusDot');
+        function updateConnectionStatus(connected, deviceName = '', type = 'USB') {
+            const statusDot = document.getElementById('statusDot'); // Might not exist in DOM?
             const statusText = document.getElementById('statusText');
             const navStatusDot = document.getElementById('navStatusDot');
             const navStatusText = document.getElementById('navStatusText');
-            const connectBtn = document.getElementById('connectBtn');
             const navConnectBtn = document.getElementById('navConnectBtn');
+            const navConnectBleBtn = document.getElementById('navConnectBleBtn');
+            const mainConnectBtn = document.getElementById('connectBtn');
 
             if (connected) {
-                if(statusDot) statusDot.classList.add('connected');
                 if(navStatusDot) navStatusDot.classList.add('connected');
-                if(statusText) statusText.textContent = `Connected to ${deviceName}`;
-                if(navStatusText) navStatusText.textContent = `Connected`;
-                if(connectBtn) {
-                    connectBtn.textContent = 'Connected ✓';
-                    connectBtn.disabled = true;
-                }
-                if(navConnectBtn) {
-                    navConnectBtn.textContent = 'Connected ✓';
-                    navConnectBtn.disabled = true;
-                }
+                if(navStatusText) navStatusText.textContent = `Connected (${type})`;
+                
+                // Disable connect buttons
+                if(navConnectBtn) { navConnectBtn.disabled = true; navConnectBtn.classList.add('opacity-50'); }
+                if(navConnectBleBtn) { navConnectBleBtn.disabled = true; navConnectBleBtn.classList.add('opacity-50'); }
+                if(mainConnectBtn) { mainConnectBtn.disabled = true; mainConnectBtn.textContent = `Connected (${type})`; }
             } else {
-                if(statusDot) statusDot.classList.remove('connected');
                 if(navStatusDot) navStatusDot.classList.remove('connected');
-                if(statusText) statusText.textContent = 'Not connected';
                 if(navStatusText) navStatusText.textContent = 'Not connected';
-                if(connectBtn) {
-                    connectBtn.textContent = 'Connect to Nano Cortex';
-                    connectBtn.disabled = false;
-                }
-                if(navConnectBtn) {
-                    navConnectBtn.textContent = 'Connect';
-                    navConnectBtn.disabled = false;
-                }
+                
+                // Enable connect buttons
+                if(navConnectBtn) { navConnectBtn.disabled = false; navConnectBtn.classList.remove('opacity-50'); navConnectBtn.textContent = 'USB'; }
+                if(navConnectBleBtn) { navConnectBleBtn.disabled = false; navConnectBleBtn.classList.remove('opacity-50'); navConnectBleBtn.textContent = 'BLE'; }
+                if(mainConnectBtn) { mainConnectBtn.disabled = false; mainConnectBtn.textContent = 'Connect to Nano Cortex'; }
             }
         }
 
         // Enable controls
         function enableControls() {
-            // Enable all buttons and inputs
-            const selectors = [
-                '.btn-preset', 
-                '.btn-quick', 
-                '#expressionPedal'
-            ];
-            
+            const selectors = ['.btn-preset', '.btn-quick', '#expressionPedal'];
             selectors.forEach(selector => {
                 document.querySelectorAll(selector).forEach(el => {
                     el.disabled = false;
@@ -521,6 +544,7 @@
                 }, 6000);
             } else {
                 console.error(message);
+                alert(message);
             }
         }
 
@@ -534,7 +558,6 @@
                     btnTap.classList.add('active-state');
                 });
                 btnTap.addEventListener('mouseup', () => {
-                    // Tap tempo is usually a trigger, but we remove visual state
                     btnTap.classList.remove('active-state');
                 });
             }
@@ -589,18 +612,9 @@
             });
         }
 
-        const p1Btn = document.getElementById('preset1Btn');
-        if(p1Btn) p1Btn.addEventListener('click', () => switchPreset(0));
-        
-        const p8Btn = document.getElementById('preset8Btn');
-        if(p8Btn) p8Btn.addEventListener('click', () => switchPreset(7));
-        
-        const p16Btn = document.getElementById('preset16Btn');
-        if(p16Btn) p16Btn.addEventListener('click', () => switchPreset(15));
-
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (!midiOutput) return;
+            if (!midiOutput && !bluetoothCharacteristic) return;
             
             const key = parseInt(e.key);
             if (key >= 1 && key <= 9) {
@@ -621,20 +635,50 @@
         const navConnectBtn = document.getElementById('navConnectBtn');
         if(navConnectBtn) navConnectBtn.addEventListener('click', connectMIDI);
         
+        const navConnectBleBtn = document.getElementById('navConnectBleBtn');
+        if(navConnectBleBtn) navConnectBleBtn.addEventListener('click', connectBluetooth);
+        
         initPresetGrid();
         setupCCListeners(); // Initialize listeners for new controls
+
+        // Test Function for BLE Formats
+        window.sendTestFormat = function(id) {
+            if (!bluetoothCharacteristic) {
+                alert('Please connect via BLE first!');
+                return;
+            }
+            
+            let data = [];
+            // Target: Tuner Toggle (CC 43 / 0x2B), Value 127 (0x7F)
+            const cc = 43; 
+            const val = 127; 
+
+            switch(id) {
+                case 1: // Standard MIDI
+                    data = [0xB0, cc, val];
+                    break;
+                case 2: // BLE MIDI Packet (Header 0x80, Timestamp 0x80)
+                    data = [0x80, 0x80, 0xB0, cc, val];
+                    break;
+                case 3: // CC + Value
+                    data = [cc, val];
+                    break;
+                case 4: // MIDI with Prefix
+                    data = [0x00, 0xB0, cc, val];
+                    break;
+                case 5: // Running Status (Simulated as just CC+Val)
+                    data = [cc, val];
+                    break;
+                case 6: // SysEx Wrapper
+                    data = [0xF0, 0x00, 0xB0, cc, val, 0xF7];
+                    break;
+            }
+
+            console.log(`🧪 Testing Format ${id}: [${data.map(b => b.toString(16).toUpperCase()).join(', ')}]`);
+            sendMIDI(data);
+        };
         
         // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const nav = document.querySelector('nav');
-            if (nav) {
-                if (window.scrollY > 20) {
-                    nav.style.background = 'rgba(0, 0, 0, 0.98)';
-                } else {
-                    nav.style.background = 'rgba(0, 0, 0, 0.95)';
-                }
-            }
-        });
     </script>
 </body>
 </html>

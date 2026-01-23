@@ -6,12 +6,8 @@ import { PresetGrid } from './components/PresetGrid';
 import { InfoBox } from './components/InfoBox';
 import { Footer } from './components/Footer';
 import { CC, DEFAULT_CC_STATE } from './constants';
-import type { CCState,
-  NavigatorWithMIDI,
-  MIDIMessageEvent,
-  MIDIOutput,
-  MIDIInput
-} from './types';
+import { WebMidiConnection, BluetoothMidiConnection, type DeviceConnection } from './services/MidiService';
+import type { CCState } from './types';
 
 function App(){
   // State
@@ -23,9 +19,8 @@ function App(){
   const [expressionValue, setExpressionValue] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Refs for MIDI access (non-reactive)
-  const midiOutputRef = useRef<MIDIOutput | null>(null);
-  const midiInputRef = useRef<MIDIInput | null>(null);
+  // Refs for Connection
+  const connectionRef = useRef<DeviceConnection | null>(null);
 
   // Error handling
   const showError = useCallback((message: string) => {
@@ -35,9 +30,8 @@ function App(){
   }, []);
 
   // MIDI Message Handler
-  const handleMidiMessage = useCallback((event: MIDIMessageEvent) => {
-    if (!event.data) return;
-    const [status, data1, data2] = event.data;
+  const handleMidiMessage = useCallback((data: Uint8Array) => {
+    const [status, data1, data2] = data;
     const messageType = status & 0xF0;
 
     // Control Change (0xB0)
@@ -71,94 +65,61 @@ function App(){
     }
   }, []);
 
-  // Connect MIDI
-  const connectMIDI = async () => {
+  // Connect
+  const connect = async (type: 'usb' | 'bluetooth') => {
     setError(null);
     setIsConnecting(true);
-
-    if (window.location.protocol === 'file:') {
-      showError('⚠️ Cannot use file:// protocol. Please host this page on a web server.');
-      setIsConnecting(false);
-      return;
-    }
-
-    const nav = navigator as unknown as NavigatorWithMIDI;
-
-    if (!nav.requestMIDIAccess) {
-      showError('WebMIDI is not supported in your browser. Please use Chrome, Edge, or Opera.');
-      setIsConnecting(false);
-      return;
+    
+    // Disconnect existing
+    if (connectionRef.current) {
+        connectionRef.current.disconnect();
+        connectionRef.current = null;
+        setIsConnected(false);
     }
 
     try {
-      const midiAccess = await nav.requestMIDIAccess();
-      
-      const outputs = Array.from(midiAccess.outputs.values());
-      const inputs = Array.from(midiAccess.inputs.values());
+        let connection: DeviceConnection;
+        
+        if (type === 'bluetooth') {
+            connection = new BluetoothMidiConnection();
+        } else {
+            if (window.location.protocol === 'file:') {
+                throw new Error('Cannot use WebMIDI on file:// protocol.');
+            }
+            connection = new WebMidiConnection();
+        }
 
-      if (outputs.length === 0) {
-        showError('No MIDI devices found. Please connect your Nano Cortex via USB.');
-        setIsConnecting(false);
-        return;
-      }
-
-      // Find Nano Cortex Output
-      let selectedOutput: MIDIOutput | undefined = outputs.find((output) => 
-        (output.name || '').toLowerCase().includes('nano') || 
-        (output.name || '').toLowerCase().includes('cortex')
-      );
-
-      if (!selectedOutput && outputs.length > 0) {
-        selectedOutput = outputs[0];
-      }
-
-      // Find Nano Cortex Input
-      let selectedInput: MIDIInput | undefined = inputs.find((input) => 
-        (input.name || '').toLowerCase().includes('nano') || 
-        (input.name || '').toLowerCase().includes('cortex')
-      );
-
-      if (!selectedInput && inputs.length > 0) {
-        selectedInput = inputs[0];
-      }
-
-      if (selectedOutput) {
-        midiOutputRef.current = selectedOutput;
-        setDeviceName(selectedOutput.name || 'Unknown Device');
-      }
-      
-      if (selectedInput) {
-        midiInputRef.current = selectedInput;
-        selectedInput.onmidimessage = handleMidiMessage;
-        console.log(`Connected to MIDI Input: ${selectedInput.name}`);
-      }
-
-      setIsConnected(true);
-      console.log('🎹 MIDI Connection established.');
+        await connection.connect();
+        
+        connection.onMessage(handleMidiMessage);
+        
+        connectionRef.current = connection;
+        setDeviceName(connection.name);
+        setIsConnected(true);
+        console.log(`🎹 Connection established via ${type}`);
 
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message.includes('permissions policy')) {
-             showError('⚠️ MIDI blocked by permissions policy.');
+        if (err instanceof Error) {
+            if (err.message.includes('permissions policy')) {
+                showError('⚠️ MIDI blocked by permissions policy.');
+            } else {
+                showError(`Connection failed: ${err.message}`);
+            }
         } else {
-             showError(`Connection failed: ${err.message}`);
+            showError('Connection failed: Unknown error');
         }
-      } else {
-        showError('Connection failed: Unknown error');
-      }
     } finally {
-      setIsConnecting(false);
+        setIsConnecting(false);
     }
   };
 
   // Send CC
   const sendCC = useCallback((ccNumber: number, value: number) => {
-    if (!midiOutputRef.current) {
-    //   showError('Not connected to device');
+    if (!connectionRef.current) {
       return;
     }
     try {
-      midiOutputRef.current.send([0xB0, ccNumber, value]);
+      connectionRef.current.send([0xB0, ccNumber, value]);
       console.log(`📤 Sent CC${ccNumber} = ${value}`);
     } catch (err: unknown) {
         if (err instanceof Error) {
@@ -169,16 +130,12 @@ function App(){
 
   // Send Program Change
   const switchPreset = useCallback((presetNumber: number) => {
-    if (!midiOutputRef.current) {
-    //   showError('Not connected to device');
-    }
-    
     // Always update local state for responsiveness
     setCurrentPreset(presetNumber);
 
-    if (midiOutputRef.current) {
+    if (connectionRef.current) {
         try {
-            midiOutputRef.current.send([0xC0, presetNumber]);
+            connectionRef.current.send([0xC0, presetNumber]);
             console.log(`📤 Sent Preset Change: ${presetNumber + 1}`);
         } catch (err: unknown) {
              if (err instanceof Error) {
@@ -213,10 +170,7 @@ function App(){
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only process if connected? Original code said "if (!midiOutput) return;"
-      // But maybe we want to allow navigation even if not connected?
-      // Let's stick to original logic: if (!midiOutputRef.current) return;
-      if (!midiOutputRef.current) return;
+      if (!connectionRef.current) return;
 
       const key = parseInt(e.key);
       if (!isNaN(key) && key >= 1 && key <= 9) {
@@ -237,7 +191,7 @@ function App(){
       <Navigation 
         isConnected={isConnected} 
         deviceName={deviceName} 
-        onConnect={connectMIDI}
+        onConnect={connect}
         isConnecting={isConnecting}
       />
 

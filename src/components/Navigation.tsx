@@ -3,14 +3,15 @@ import React, { useEffect, useState } from 'react';
 interface NavigationProps {
   isConnected: boolean;
   deviceName: string;
-  onConnect: () => void;
+  onConnect: (type: 'usb' | 'bluetooth') => void;
   isConnecting: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ 
   isConnected, 
   onConnect,
-  isConnecting
+  isConnecting,
+  deviceName
 }) => {
   const [scrolled, setScrolled] = useState(false);
 
@@ -39,18 +40,37 @@ export const Navigation: React.FC<NavigationProps> = ({
             <div className="items-center hidden gap-3 sm:flex">
               <span className={`status-dot ${isConnected ? 'connected' : ''}`}></span>
               <span className="text-sm font-medium text-neural-n100">
-                {isConnected ? `Connected` : 'Not connected'}
+                {isConnected ? `Connected: ${deviceName}` : 'Not connected'}
               </span>
             </div>
             
-            {/* Connect Button */}
-            <button 
-              onClick={onConnect}
-              disabled={isConnected || isConnecting}
-              className="text-sm btn-connect md:text-base"
-            >
-              {isConnected ? 'Connected ✓' : (isConnecting ? 'Connecting...' : 'Connect')}
-            </button>
+            {/* Connect Buttons */}
+            {!isConnected ? (
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => onConnect('usb')}
+                  disabled={isConnecting}
+                  className="text-sm btn-connect md:text-base"
+                  title="Connect via USB MIDI"
+                >
+                  {isConnecting ? '...' : 'USB'}
+                </button>
+                <button 
+                  onClick={() => onConnect('bluetooth')}
+                  disabled={isConnecting}
+                  className="text-sm btn-connect md:text-base"
+                  title="Connect via Bluetooth MIDI"
+                >
+                  {isConnecting ? '...' : 'BLE'}
+                </button>
+              </div>
+            ) : (
+              <button 
+                className="text-sm btn-connect md:text-base cursor-default"
+              >
+                Connected ✓
+              </button>
+            )}
           </div>
 
           {/* Link */}
