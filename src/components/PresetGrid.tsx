@@ -49,7 +49,7 @@ export const PresetGrid: React.FC<PresetGridProps> = ({ currentPreset, onSelectP
                         disabled={!isConnected}
                     >
                         <div className="flex flex-col items-center">
-                            <span className="text-sm font-bold">{preset + 1}</span>
+                            <span className="text-sm font-bold">{preset}</span>
                         </div>
                     </button>
 
