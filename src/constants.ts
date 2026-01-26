@@ -23,3 +23,6 @@ export const DEFAULT_CC_STATE = {
     [CC.FX5]: false,
     [CC.TUNER]: false
 };
+
+// Feature Flags
+export const ENABLE_BLE_EXPERIMENTAL = false; // Set to true to enable experimental BLE support

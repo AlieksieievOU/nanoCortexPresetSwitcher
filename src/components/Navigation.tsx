@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ENABLE_BLE_EXPERIMENTAL } from '../constants';
 
 interface NavigationProps {
   isConnected: boolean;
@@ -7,8 +8,8 @@ interface NavigationProps {
   isConnecting: boolean;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ 
-  isConnected, 
+export const Navigation: React.FC<NavigationProps> = ({
+  isConnected,
   onConnect,
   isConnecting,
   deviceName
@@ -17,7 +18,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   useEffect(() => {
     const handleScroll = () => {
-        setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 20);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -25,15 +26,15 @@ export const Navigation: React.FC<NavigationProps> = ({
   }, []);
 
   return (
-    <nav 
-        className="sticky top-0 left-0 right-0 z-50 border-b border-neural-n40 backdrop-blur-[10px] transition-colors duration-300"
-        style={{
-            background: scrolled ? 'rgba(0, 0, 0, 0.98)' : 'rgba(0, 0, 0, 0.95)'
-        }}
+    <nav
+      className="sticky top-0 left-0 right-0 z-50 border-b border-neural-n40 backdrop-blur-[10px] transition-colors duration-300"
+      style={{
+        background: scrolled ? 'rgba(0, 0, 0, 0.98)' : 'rgba(0, 0, 0, 0.95)'
+      }}
     >
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-6">
-          
+
           {/* Status and Connect Button */}
           <div className="flex items-center gap-4 md:gap-6">
             {/* Status Indicator */}
@@ -43,11 +44,11 @@ export const Navigation: React.FC<NavigationProps> = ({
                 {isConnected ? `Connected: ${deviceName}` : 'Not connected'}
               </span>
             </div>
-            
+
             {/* Connect Buttons */}
             {!isConnected ? (
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => onConnect('usb')}
                   disabled={isConnecting}
                   className="text-sm btn-connect md:text-base"
@@ -55,17 +56,19 @@ export const Navigation: React.FC<NavigationProps> = ({
                 >
                   {isConnecting ? '...' : 'USB'}
                 </button>
-                <button 
-                  onClick={() => onConnect('bluetooth')}
-                  disabled={isConnecting}
-                  className="text-sm btn-connect md:text-base"
-                  title="Connect via Bluetooth MIDI"
-                >
-                  {isConnecting ? '...' : 'BLE'}
-                </button>
+                {ENABLE_BLE_EXPERIMENTAL && (
+                  <button
+                    onClick={() => onConnect('bluetooth')}
+                    disabled={isConnecting}
+                    className="text-sm btn-connect md:text-base opacity-50"
+                    title="Experimental: Bluetooth MIDI (Not working yet)"
+                  >
+                    {isConnecting ? '...' : 'BLE'}
+                  </button>
+                )}
               </div>
             ) : (
-              <button 
+              <button
                 className="text-sm btn-connect md:text-base cursor-default"
               >
                 Connected ✓
@@ -75,17 +78,17 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           {/* Link */}
           <div className="shrink-0">
-            <span className="hidden px-6 sm:inline text-neural-n80">I'm unemployed, please buy my song on</span> 
-            <a 
-              target="_blank" 
-              href="https://projectlira.bandcamp.com/track/i-dwell" 
+            <span className="hidden px-6 sm:inline text-neural-n80">I'm unemployed, please buy my song on</span>
+            <a
+              target="_blank"
+              href="https://projectlira.bandcamp.com/track/i-dwell"
               className="text-sm btn-connect md:text-base"
               rel="noreferrer"
-            > 
+            >
               Bandcamp
-            </a>  
+            </a>
           </div>
-          
+
         </div>
       </div>
     </nav>
