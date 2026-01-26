@@ -22,7 +22,7 @@ export const PresetGrid: React.FC<PresetGridProps> = ({ currentPreset, onSelectP
     return (
         <div className="section-card">
             <h2 className="flex items-center gap-3 mb-6 text-2xl font-bold text-neural-n100">
-                All Presets (1-64)
+                All Presets (0-63)
             </h2>
             <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-3 lg:grid-cols-5 ">
                 <button
