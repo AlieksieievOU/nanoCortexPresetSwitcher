@@ -4,11 +4,13 @@ interface PresetGridProps {
   currentPreset: number;
   onSelectPreset: (preset: number) => void;
   isConnected: boolean;
+  presetNames: string[];
 }
 
-export const PresetGrid: React.FC<PresetGridProps> = ({ currentPreset, onSelectPreset, isConnected }) => {
+export const PresetGrid: React.FC<PresetGridProps> = ({ currentPreset, onSelectPreset, isConnected, presetNames }) => {
   // Generate array [0..63]
   const presets = Array.from({ length: 64 }, (_, i) => i);
+
 
   const handlePrev = () => {
     onSelectPreset(Math.max(0, currentPreset - 1));
@@ -47,8 +49,14 @@ export const PresetGrid: React.FC<PresetGridProps> = ({ currentPreset, onSelectP
                     onClick={() => onSelectPreset(preset)}
                     disabled={!isConnected}
                 >
-                    {preset + 1}
+                    <div className="flex flex-col items-center">
+                        <span className="text-[10px] opacity-50 block leading-none mb-1">{preset + 1}</span>
+                        <span className="text-xs font-semibold leading-tight text-center truncate w-full px-1">
+                            {presetNames[preset] || (preset + 1)}
+                        </span>
+                    </div>
                 </button>
+
             ))}
         </div>
     </div>

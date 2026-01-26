@@ -1,4 +1,6 @@
 export type CCState = Record<number, boolean>;
+export type PresetNames = string[];
+
 
 // Re-export global Web MIDI types to avoid conflicts with locally defined interfaces
 // and ensure compatibility with the global Navigator type.
@@ -47,11 +49,21 @@ export interface BluetoothRemoteGATTServer {
 
 export interface BluetoothRemoteGATTService {
   getCharacteristic(characteristic: BluetoothServiceUUID): Promise<BluetoothRemoteGATTCharacteristic>;
+  getCharacteristics(): Promise<BluetoothRemoteGATTCharacteristic[]>;
 }
 
 export interface BluetoothRemoteGATTCharacteristic {
+  uuid: string;
+  properties: BluetoothCharacteristicProperties;
   writeValue(value: BufferSource): Promise<void>;
+  writeValueWithoutResponse(value: BufferSource): Promise<void>;
   startNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
   addEventListener(type: string, listener: EventListener): void;
   value?: DataView;
+}
+
+export interface BluetoothCharacteristicProperties {
+  write: boolean;
+  writeWithoutResponse: boolean;
+  notify: boolean;
 }
